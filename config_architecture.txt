@@ -1,0 +1,87 @@
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         config.py                                │
+│                  (Centralized Configuration)                     │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  ┌───────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
+│  │   AIConfig    │  │ PromptTemplates  │  │ ShippingConfig  │ │
+│  ├───────────────┤  ├──────────────────┤  ├─────────────────┤ │
+│  │ • Model       │  │ • System Prompt  │  │ • FedEx Rates   │ │
+│  │ • API Key     │  │ • Extraction     │  │ • UPS Rates     │ │
+│  │ • Temperature │  │   Template       │  │ • USPS Rates    │ │
+│  │ • Max Tokens  │  └──────────────────┘  │ • Priority Fee  │ │
+│  └───────────────┘                         └─────────────────┘ │
+│                                                                  │
+│  ┌──────────────────┐  ┌─────────────┐  ┌──────────────────┐  │
+│  │  UIConfig        │  │ DebugConfig │  │ BusinessRules    │  │
+│  ├──────────────────┤  ├─────────────┤  │ Config           │  │
+│  │ • Server Port    │  │ • Verbose   │  ├──────────────────┤  │
+│  │ • Theme          │  │ • Logging   │  │ • Default Rules  │  │
+│  │ • Placeholders   │  └─────────────┘  │ • Priority Logic │  │
+│  └──────────────────┘                   └──────────────────┘  │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+            ┌─────────────────┼─────────────────┐
+            │                 │                  │
+            ▼                 ▼                  ▼
+    ┌──────────────┐  ┌──────────────┐  ┌──────────────┐
+    │ template.py  │  │  action.py   │  │  handler.py  │
+    ├──────────────┤  ├──────────────┤  ├──────────────┤
+    │ Uses:        │  │ Uses:        │  │ Uses:        │
+    │ • AIConfig   │  │ • Shipping   │  │ • Business   │
+    │ • Prompts    │  │   Config     │  │   Rules      │
+    └──────────────┘  └──────────────┘  │ • Debug      │
+            │                 │          └──────────────┘
+            │                 │                  │
+            └─────────────────┼──────────────────┘
+                              │
+                              ▼
+                      ┌──────────────┐
+                      │   main.py    │
+                      ├──────────────┤
+                      │ Uses:        │
+                      │ • UIConfig   │
+                      │ • AIConfig   │
+                      └──────────────┘
+                              │
+                              ▼
+                    ┌─────────────────┐
+                    │  Gradio UI      │
+                    │  localhost:7860 │
+                    └─────────────────┘
+
+
+Configuration Flow:
+═══════════════════
+
+1. Edit config.py once
+2. All components automatically use new settings
+3. No need to modify template.py, action.py, handler.py, or main.py
+
+Example Workflow:
+─────────────────
+
+Want to change AI model?
+  ✏️  config.py → AIConfig.MODEL_NAME = "gpt-4"
+  ✅ Done! template.py automatically uses it
+
+Want to adjust FedEx rates?
+  ✏️  config.py → ShippingConfig.FedEx.BASE_RATE = 6.00
+  ✅ Done! action.py automatically uses it
+
+Want to change UI port?
+  ✏️  config.py → UIConfig.SERVER_PORT = 8080
+  ✅ Done! main.py automatically uses it
+
+
+Benefits:
+─────────
+✅ Single source of truth
+✅ Easy to understand all settings
+✅ No hunting through multiple files
+✅ Safe to modify (no code logic)
+✅ Can version control different configs
+✅ Environment-specific configs possible
+```

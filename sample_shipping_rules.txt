@@ -1,0 +1,50 @@
+# Shipping Rules Specification Document
+
+## Company Shipping Policy - E-Commerce Platform
+
+### Carrier Selection Rules
+
+**FedEx Rules:**
+FedEx is our preferred carrier for medium-weight packages traveling moderate distances. When a package weighs 5 pounds or less and needs to travel up to 100 miles, we use FedEx standard shipping. FedEx offers reliable service with good tracking for packages under 10 pounds going express.
+
+**UPS Rules:**
+For heavier shipments over 10 pounds traveling long distances (more than 200 miles), UPS provides better rates and handling. UPS is especially cost-effective for bulk shipments and packages requiring special handling.
+
+**USPS Rules:**
+United States Postal Service is ideal for lightweight items. Any package weighing 2 pounds or less traveling under 50 miles should use USPS for the most economical shipping option. USPS First Class is perfect for documents and small parcels.
+
+### Priority and Express Shipping
+
+**High-Value Orders:**
+Orders with a total value exceeding $500 automatically qualify for free priority shipping upgrade. This is part of our customer loyalty program to encourage larger purchases.
+
+**Urgent Shipments:**
+When customers mark their order as urgent, priority shipping should be enabled regardless of order value to meet delivery expectations.
+
+### Customer Discount Rules
+
+**Senior Citizens:**
+Customers aged 65 or older receive a 15% discount on all purchases as part of our senior appreciation program.
+
+**Regional Promotions:**
+Customers over 18 years old located in New York receive a 10% promotional discount.
+
+**Volume Discount:**
+Orders totaling $500 or more qualify for a 5% bulk purchase discount.
+
+### Sample Formatted Rules
+
+weight <= 5 && distance <= 100 -> CalculateFedExShipping(4.5, 80)
+weight > 10 && distance > 200 -> CalculateUPSShipping(12, 250)
+weight <= 2 && distance <= 50 -> CalculateUSPSShipping(1.5, 40)
+order_value > 500 -> SetPriorityShipping()
+age > 65 -> ApplyDiscount(15)
+age > 18 && location == "NY" -> ApplyDiscount(10)
+total >= 500 -> ApplyDiscount(5)
+
+### Additional Policies
+
+- International shipments require customs documentation
+- Hazardous materials need special carrier approval
+- Perishable goods must use expedited shipping
+- Oversized packages incur additional handling fees

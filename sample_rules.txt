@@ -1,0 +1,46 @@
+# Sample Business Rules Document
+
+## E-Commerce Business Rules
+
+### Discount Rules for Retail Customers
+
+**Senior Discount:**
+If a customer's age is greater than 65 years, apply a 15% discount to their order.
+
+**Premium Customer Rules:**
+When a customer's age is greater than 18 and their location is New York, apply a 10% discount.
+
+**High-Value Order Rules:**
+If the total order amount is greater than or equal to $500, apply a 5% discount to encourage bulk purchases.
+
+### Shipping Charge Calculation Rules
+
+**FedEx Shipping Rules:**
+- For packages weighing 5 pounds or less traveling up to 100 miles, calculate FedEx shipping using standard rates
+- For express orders with packages under 10 pounds, use FedEx priority shipping
+
+**UPS Shipping Rules:**
+- For packages over 10 pounds traveling more than 200 miles, calculate UPS shipping charges
+- UPS is preferred for heavy packages due to better rates
+
+**USPS Shipping Rules:**
+- For lightweight packages (2 pounds or less) traveling short distances (under 50 miles), use USPS for most economical shipping
+- USPS First Class is ideal for documents and small items
+
+**Priority Shipping:**
+- Orders with total value exceeding $500 qualify for free priority shipping upgrade
+- Urgent orders (marked as urgent) should use priority shipping regardless of value
+
+### Pre-formatted Rules (for testing):
+age > 65 -> ApplyDiscount(15)
+age > 18 && location == "NY" -> ApplyDiscount(10)
+total >= 500 -> ApplyDiscount(5)
+weight <= 5 && distance <= 100 -> CalculateFedExShipping(4.5, 80)
+weight > 10 && distance > 200 -> CalculateUPSShipping(12, 250)
+weight <= 2 && distance <= 50 -> CalculateUSPSShipping(1.5, 40)
+order_value > 500 -> SetPriorityShipping()
+
+### Additional Business Logic
+- International orders may require additional customs documentation
+- Oversized packages need special handling
+- Perishable items require expedited shipping

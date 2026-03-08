@@ -1,0 +1,14 @@
+# Business Rules Engine Dependencies
+
+# UI Framework
+gradio>=4.0.0
+
+# PDF Support (for document extraction)
+PyPDF2>=3.0.0
+
+# AI Integration with Langchain (optional)
+# Uncomment these when ready to use AI-powered extraction:
+# langchain>=0.1.0
+# langchain-openai>=1.0.0
+# langchain-community>=0.1.0
+# openai>=1.0.0
