@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+import re
 from typing import Iterable
 
 from context import Context
@@ -49,23 +50,36 @@ class AIRuleUpdater(RuleUpdater):
         self.api_key = api_key or AIConfig.OPENAI_API_KEY
         self.model = model or AIConfig.MODEL_NAME
 
-    def load_rules(self, document: str):
+    def extract_rule_strings(self, document: str) -> list[str]:
         # Try Langchain integration first
         if self.use_langchain:
             try:
-                structured_rules = self._extract_with_langchain(document)
-                return pipeline.handle(structured_rules)
+                structured_rules_text = self._extract_with_langchain(document)
+                extracted_rules = self._extract_rules_from_ai_output(structured_rules_text)
+                if extracted_rules:
+                    return extracted_rules
             except Exception as e:
                 print(f"Langchain extraction failed: {e}. Trying fallback...")
         
         # Try generic AI client
         if self.ai_client:
             prompt = self._build_extraction_prompt(document)
-            structured_rules = self.ai_client.generate(prompt)
-            return pipeline.handle(structured_rules)
+            structured_rules_text = self.ai_client.generate(prompt)
+            extracted_rules = self._extract_rules_from_ai_output(structured_rules_text)
+            if extracted_rules:
+                return extracted_rules
         
-        # Fallback: assume document is already formatted
-        return pipeline.handle(document)
+        # Fallback: assume document is already formatted with condition -> action lines
+        fallback_rules = [
+            line.strip()
+            for line in document.splitlines()
+            if line.strip() and "->" in line
+        ]
+        return fallback_rules
+
+    def load_rules(self, document: str):
+        extracted_rules = self.extract_rule_strings(document)
+        return pipeline.handle(extracted_rules)
 
     def _build_extraction_prompt(self, document: str) -> str:
         """Build comprehensive prompt for rule extraction using config template."""
@@ -97,6 +111,25 @@ class AIRuleUpdater(RuleUpdater):
 
         response = llm.invoke([system_msg, human_msg])
         return response.content
+
+    def _extract_rules_from_ai_output(self, output_text: str) -> list[str]:
+        cleaned_rules = []
+        for raw_line in output_text.splitlines():
+            line = raw_line.strip()
+            if not line:
+                continue
+
+            if line.startswith("```"):
+                continue
+
+            line = re.sub(r"^[-*\d\.\)\s]+", "", line).strip()
+
+            if "->" not in line:
+                continue
+
+            cleaned_rules.append(line)
+
+        return cleaned_rules
 
 
 class BusinessRuleController:

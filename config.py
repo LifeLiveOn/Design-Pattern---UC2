@@ -39,7 +39,12 @@ class PromptTemplates:
     """AI prompt templates for rule extraction"""
     
     SYSTEM_PROMPT = """You are a business rule extraction expert.
-Extract ALL business rules and format them as: condition -> action
+Extract ALL business rules and format each rule exactly as:
+[P=<0-100>] condition -> action
+
+Priority meaning:
+- Higher P means higher priority (more restrictive/specific should usually be higher)
+- P=100 is highest, P=0 is lowest
 
 ACTIONS: ApplyDiscount(%), CalculateFedExShipping(weight, distance), 
 CalculateUPSShipping(weight, distance), CalculateUSPSShipping(weight, distance), 
@@ -51,23 +56,28 @@ Quote strings, not numbers.
 Output ONLY formatted rules, one per line. No explanations."""
 
     EXTRACTION_PROMPT_TEMPLATE = """Extract business rules from the following document.
-Convert each rule to the format: condition -> action
+Convert each rule to the format: [P=<0-100>] condition -> action
+
+You must assign a priority P for each rule:
+- Higher P = more restrictive/specific rule
+- Lower P = broader/default rule
+- Use integers only, from 0 to 100
 
 SUPPORTED ACTIONS:
 1. ApplyDiscount(percentage) - Discount calculation
-   Example: age > 65 -> ApplyDiscount(15)
+    Example: [P=90] age > 65 -> ApplyDiscount(15)
 
 2. CalculateFedExShipping(weight, distance) - FedEx shipping charges
-   Example: weight <= 5 && distance < 100 -> CalculateFedExShipping(4.5, 80)
+    Example: [P=80] weight <= 5 && distance < 100 -> CalculateFedExShipping(4.5, 80)
 
 3. CalculateUPSShipping(weight, distance) - UPS shipping charges
-   Example: weight > 10 -> CalculateUPSShipping(12, 250)
+    Example: [P=60] weight > 10 -> CalculateUPSShipping(12, 250)
 
 4. CalculateUSPSShipping(weight, distance) - USPS shipping charges
-   Example: weight <= 2 -> CalculateUSPSShipping(1.5, 50)
+    Example: [P=75] weight <= 2 -> CalculateUSPSShipping(1.5, 50)
 
 5. SetPriorityShipping() - Enable priority shipping
-   Example: order_value > 500 -> SetPriorityShipping()
+    Example: [P=70] order_value > 500 -> SetPriorityShipping()
 
 CONDITION FORMAT:
 - Use operators: ==, !=, >, <, >=, <=
