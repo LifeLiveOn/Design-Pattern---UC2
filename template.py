@@ -8,6 +8,7 @@ from context import Context
 from handler import pipeline
 from config import AIConfig, PromptTemplates
 
+
 class RuleUpdater(ABC):
 
     def update(self, source):
@@ -24,7 +25,7 @@ class RuleUpdater(ABC):
 
     def process_rules(self, rules):
         return rules
-    
+
 
 class ManualRuleUpdater(RuleUpdater):
     """
@@ -35,6 +36,7 @@ class ManualRuleUpdater(RuleUpdater):
         if isinstance(rules, str):
             return pipeline.handle(rules)
         return pipeline.handle(list(rules))
+
 
 class AIRuleUpdater(RuleUpdater):
     """
@@ -55,20 +57,22 @@ class AIRuleUpdater(RuleUpdater):
         if self.use_langchain:
             try:
                 structured_rules_text = self._extract_with_langchain(document)
-                extracted_rules = self._extract_rules_from_ai_output(structured_rules_text)
+                extracted_rules = self._extract_rules_from_ai_output(
+                    structured_rules_text)
                 if extracted_rules:
                     return extracted_rules
             except Exception as e:
                 print(f"Langchain extraction failed: {e}. Trying fallback...")
-        
+
         # Try generic AI client
         if self.ai_client:
             prompt = self._build_extraction_prompt(document)
             structured_rules_text = self.ai_client.generate(prompt)
-            extracted_rules = self._extract_rules_from_ai_output(structured_rules_text)
+            extracted_rules = self._extract_rules_from_ai_output(
+                structured_rules_text)
             if extracted_rules:
                 return extracted_rules
-        
+
         # Fallback: assume document is already formatted with condition -> action lines
         fallback_rules = [
             line.strip()
@@ -88,21 +92,19 @@ class AIRuleUpdater(RuleUpdater):
     def _extract_with_langchain(self, document: str) -> str:
         """Use Langchain with OpenAI to extract business rules."""
         try:
-            from langchain_openai import ChatOpenAI
-            from langchain.schema import HumanMessage, SystemMessage
+            from langchain_ollama import ChatOllama
+            from langchain_core.messages import HumanMessage, SystemMessage
         except ImportError:
             raise ImportError(
-                "Langchain not installed. Run: pip install langchain langchain-openai"
+                "Langchain not installed. Run: pip install langchain langchain-ollama"
             )
 
-        if not self.api_key:
-            raise ValueError("OpenAI API key required for Langchain integration")
-
-        llm = ChatOpenAI(
+        llm = ChatOllama(
             model=self.model,
-            api_key=self.api_key,
+            base_url="http://127.0.0.1:11434",
             temperature=AIConfig.TEMPERATURE,
-            max_tokens=AIConfig.MAX_TOKENS
+            max_tokens=AIConfig.MAX_TOKENS,
+            maxRetries=2,
         )
 
         system_msg = SystemMessage(content=PromptTemplates.SYSTEM_PROMPT)
@@ -162,5 +164,6 @@ class BusinessRuleController:
         return self.ruleset.evaluate(context)
 
     def list_rules(self):
-        sorted_rules = sorted(self.ruleset.rules, key=lambda r: r.priority, reverse=True)
+        sorted_rules = sorted(self.ruleset.rules,
+                              key=lambda r: r.priority, reverse=True)
         return [f"{rule.rule_id}: {rule}" for rule in sorted_rules]

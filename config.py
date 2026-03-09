@@ -9,25 +9,26 @@ import os
 # AI MODEL CONFIGURATION
 # =============================================================================
 
+
 class AIConfig:
     """AI model and API settings"""
-    
+
     # Enable/disable AI features
-    USE_LANGCHAIN = False  # Set to True when you have API key configured
-    
+    USE_LANGCHAIN = True  # Set to True when you have API key configured
+
     # Model selection
-    MODEL_NAME = "gpt-3.5-turbo"  # Options: gpt-3.5-turbo, gpt-4, gpt-4-turbo
+    MODEL_NAME = "granite4:3b"  # Options: gpt-3.5-turbo, gpt-4, gpt-4-turbo
     TEMPERATURE = 0.1  # Lower = more deterministic, Higher = more creative
-    
+
     # API Keys (recommended: set via environment variables)
     OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", None)
     # ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY", None)
-    
+
     # Alternative: Set directly (not recommended for production)
     # OPENAI_API_KEY = "sk-..."
-    
+
     # Langchain settings
-    MAX_TOKENS = 2000
+    MAX_TOKENS = 10000
     TOP_P = 1.0
 
 
@@ -37,7 +38,7 @@ class AIConfig:
 
 class PromptTemplates:
     """AI prompt templates for rule extraction"""
-    
+
     SYSTEM_PROMPT = """You are a business rule extraction expert.
 Extract ALL business rules and format each rule exactly as:
 [P=<0-100>] condition -> action
@@ -97,22 +98,22 @@ Return only the formatted rules, one per line."""
 
 class ShippingConfig:
     """Shipping carrier pricing formulas"""
-    
+
     class FedEx:
         BASE_RATE = 5.00
         WEIGHT_RATE = 0.50  # per lb
         DISTANCE_RATE = 0.10  # per mile
-        
+
     class UPS:
         BASE_RATE = 4.50
         WEIGHT_RATE = 0.55  # per lb
         DISTANCE_RATE = 0.08  # per mile
-        
+
     class USPS:
         BASE_RATE = 3.50
         WEIGHT_RATE = 0.45  # per lb
         DISTANCE_RATE = 0.05  # per mile
-    
+
     # Priority shipping
     PRIORITY_FEE = 15.00
 
@@ -123,13 +124,13 @@ class ShippingConfig:
 
 class BusinessRulesConfig:
     """Default business rules and settings"""
-    
+
     # Default rules when no document is provided
     DEFAULT_RULES = [
         'age > 18 && location == "NY" -> ApplyDiscount(10)',
         'total >= 500 -> ApplyDiscount(5)'
     ]
-    
+
     # Rule priority settings
     PRIORITY_BASED_ON_COMPLEXITY = True  # More complex conditions = higher priority
 
@@ -140,20 +141,20 @@ class BusinessRulesConfig:
 
 class UIConfig:
     """Gradio UI settings"""
-    
+
     # Server settings
     SERVER_NAME = "127.0.0.1"
     SERVER_PORT = 7860
     SHARE = False  # Set to True to create public link
-    
+
     # UI Appearance
     THEME = "soft"  # Options: "soft", "default", "glass", "monochrome"
-    
+
     # Example data for UI
     MANUAL_ENTRY_PLACEHOLDER = '''age > 18 && location == "NY" -> ApplyDiscount(10)
 weight <= 5 && distance <= 100 -> CalculateFedExShipping(4.5, 80)
 total >= 500 -> ApplyDiscount(5)'''
-    
+
     TEST_DATA_PLACEHOLDER = '{"age": 25, "location": "NY", "total": 600, "weight": 4.5, "distance": 80}'
 
 
@@ -163,8 +164,8 @@ total >= 500 -> ApplyDiscount(5)'''
 
 class DebugConfig:
     """Debug and logging settings"""
-    
-    VERBOSE = True  # Print handler chain progress
+
+    VERBOSE = False  # Print handler chain progress
     LOG_RULE_EVALUATION = False  # Log each rule evaluation
     SHOW_PARSE_TREE = False  # Show expression tree structure
 
@@ -178,7 +179,7 @@ def get_ai_config():
     if AIConfig.USE_LANGCHAIN and not AIConfig.OPENAI_API_KEY:
         print("Warning: Langchain enabled but no API key found.")
         print("Set OPENAI_API_KEY environment variable or configure in config.py")
-    
+
     return {
         "use_langchain": AIConfig.USE_LANGCHAIN,
         "model": AIConfig.MODEL_NAME,

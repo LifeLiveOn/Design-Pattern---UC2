@@ -1,10 +1,13 @@
 from abc import ABC, abstractmethod
 from context import Context
-from action import ApplyDiscountCommand
+from action import Action
+
+
 class Expression(ABC):
     @abstractmethod
     def interpret(self, context) -> bool:
         pass
+
 
 class AtomicCondition(Expression):
 
@@ -16,6 +19,9 @@ class AtomicCondition(Expression):
     def interpret(self, context: Context):
 
         value = context.get_value(self.left_operand)
+
+        if value is None:
+            return False
 
         if self.operator == "==":
             return value == self.right_operand
@@ -35,16 +41,19 @@ class AtomicCondition(Expression):
         return False
 
     def __str__(self):
-        right_value = repr(self.right_operand) if isinstance(self.right_operand, str) else self.right_operand
+        right_value = repr(self.right_operand) if isinstance(
+            self.right_operand, str) else self.right_operand
         return f"{self.left_operand} {self.operator} {right_value}"
 
     def __repr__(self):
         return str(self)
 
+
 class AndExpression(Expression):
 
     def __init__(self, *expressions: Expression):
         self.expressions = expressions
+
     def interpret(self, context) -> bool:
         return all(expr.interpret(context) for expr in self.expressions)
 
@@ -53,6 +62,7 @@ class AndExpression(Expression):
 
     def __repr__(self):
         return str(self)
+
 
 class OrExpression(Expression):
 
@@ -68,6 +78,7 @@ class OrExpression(Expression):
     def __repr__(self):
         return str(self)
 
+
 class NotExpression(Expression):
 
     def __init__(self, expression: Expression):
@@ -82,11 +93,13 @@ class NotExpression(Expression):
     def __repr__(self):
         return str(self)
 
+
 class Condition(Expression):
     """
     act as a wrapper around an expression, allowing us to evaluate complex conditions in a more structured way. It can be used to represent a single condition or a combination of conditions using AND, OR, and NOT expressions.
     example: Condition(AndExpression(AtomicCondition("age", ">", 18), AtomicCondition("location", "==", "New York"))) would evaluate to true if the age is greater than 18 and the location is New York.
     """
+
     def __init__(self, expression: Expression):
         self.expression = expression
 
@@ -101,6 +114,7 @@ class Condition(Expression):
 
     def __repr__(self):
         return str(self)
+
 
 class BusinessRule:
 
@@ -119,13 +133,7 @@ class BusinessRule:
         return self.condition.evaluate(context)
 
     def execute(self, context):
-
-        results = []
-
-        for action in self.actions:
-            results.append(action.execute(context))
-
-        return results
+        return [action.execute() for action in self.actions]
 
     def __str__(self):
         actions_text = ", ".join(str(action) for action in self.actions)
@@ -134,19 +142,21 @@ class BusinessRule:
     def __repr__(self):
         return str(self)
 
+
 class RuleSet:
     def __init__(self, name):
         self.name = name
         self.rules: list[BusinessRule] = []
-    
+
     def add_rule(self, rule: BusinessRule):
         self.rules.append(rule)
         # self.rules.sort(key=lambda r: r.priority, reverse=True)  # Sort by priority (higher first)
-    
+
     def evaluate(self, context: Context):
         applied_rules = []
 
-        sorted_rules = sorted(self.rules, key=lambda r: r.priority, reverse=True)
+        sorted_rules = sorted(
+            self.rules, key=lambda r: r.priority, reverse=True)
 
         for rule in sorted_rules:
             if rule.evaluate(context):
@@ -155,11 +165,14 @@ class RuleSet:
         return applied_rules if applied_rules else "No actions applied"
 
     def execute(self, context: Context):
-        sorted_rules = sorted(self.rules, key=lambda r: r.priority, reverse=True)
-
+        sorted_rules = sorted(
+            self.rules, key=lambda r: r.priority, reverse=True)
+        results = []
         for rule in sorted_rules:
             if rule.evaluate(context):
-                rule.execute(context) 
+                results.extend(rule.execute(context))
+        return results
+
 
 # example
 if __name__ == "__main__":
@@ -169,7 +182,7 @@ if __name__ == "__main__":
     and_condition = AndExpression(c1, c2, c3)
     condition = Condition(and_condition)
 
-    rule = BusinessRule("rule1", 1, condition, [ApplyDiscountCommand(10)])
+    rule = BusinessRule("rule1", 1, condition, [Action("ApplyDiscount(10)")])
     ruleset = RuleSet("Discount Rules")
     ruleset.add_rule(rule)
 
@@ -178,6 +191,5 @@ if __name__ == "__main__":
         "location": "New York",
         "total": 600
     })
-    # applied_rules = ruleset.evaluate(context)
-    # print("Applied Rules given Context:",context.data, applied_rules)
-    ruleset.execute(context)
+    applied_rules = ruleset.evaluate(context)
+    print("Applied Rules given Context:", context.data, applied_rules)

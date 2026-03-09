@@ -62,7 +62,8 @@ class BusinessRulesApp:
         return "Cleared all rules.", "", ""
 
     def _read_file(self, file_obj) -> str:
-        file_path = file_obj.name if hasattr(file_obj, "name") else str(file_obj)
+        file_path = file_obj.name if hasattr(
+            file_obj, "name") else str(file_obj)
         suffix = Path(file_path).suffix.lower()
 
         if suffix == ".txt":
@@ -72,7 +73,8 @@ class BusinessRulesApp:
             try:
                 import PyPDF2
             except ImportError as exc:
-                raise RuntimeError("PyPDF2 is required for PDF support. Run: pip install PyPDF2") from exc
+                raise RuntimeError(
+                    "PyPDF2 is required for PDF support. Run: pip install PyPDF2") from exc
 
             text_parts: list[str] = []
             with open(file_path, "rb") as f:
@@ -113,7 +115,11 @@ class BusinessRulesApp:
         )
 
     def _raw_rules_text(self) -> str:
-        return "\n".join(f"{i + 1}. {r}" for i, r in enumerate(self.raw_rules))
+        import re
+
+        def strip_priority(rule: str) -> str:
+            return re.sub(r"^\[P\s*=\s*\d{1,3}\]\s*", "", rule)
+        return "\n".join(f"{i + 1}. {strip_priority(r)}" for i, r in enumerate(self.raw_rules))
 
     def _compiled_rules_text(self) -> str:
         try:
@@ -123,6 +129,13 @@ class BusinessRulesApp:
             return str(lines)
         except Exception:
             return ""
+
+    def process_request(self, request_data: str):
+        try:
+            result = self.controller.process_request(request_data)
+            return "Request processed successfully.", str(result)
+        except Exception as exc:
+            return f"Error processing request: {exc}", ""
 
 
 def create_ui():
@@ -138,11 +151,13 @@ def create_ui():
     theme = theme_map.get(theme_name, gr.themes.Soft())
 
     with gr.Blocks(title="Business Rules Engine", theme=theme) as ui:
-        gr.Markdown("## Business Rules Engine (Simple)")
-        gr.Markdown("Manual: paste rules. AI: upload txt/pdf and extract rules.")
+        gr.Markdown("## Business Rules Engine")
+        gr.Markdown(
+            "Manual: paste rules. AI: upload txt/pdf and extract rules.")
 
         sort_mode = gr.Dropdown(
-            choices=["Most restrictive first", "Keep input order", "Least restrictive first"],
+            choices=["Most restrictive first",
+                     "Keep input order", "Least restrictive first"],
             value="Most restrictive first",
             label="Priority sorting mode",
         )
@@ -153,17 +168,30 @@ def create_ui():
                 lines=10,
                 placeholder='age > 18 && location == "NY" -> ApplyDiscount(10)',
             )
-            upload_file = gr.File(label="Upload (.txt or .pdf)", file_types=[".txt", ".pdf"])
+            upload_file = gr.File(
+                label="Upload (.txt or .pdf)", file_types=[".txt", ".pdf"])
 
         with gr.Row():
-            add_manual_btn = gr.Button("Append Manual Rules", variant="primary")
+            add_manual_btn = gr.Button(
+                "Append Manual Rules", variant="primary")
             add_ai_btn = gr.Button("Append Rules From File")
             resort_btn = gr.Button("Re-sort Rules")
             clear_btn = gr.Button("Clear All")
 
+        with gr.Row():
+            request_data = gr.Textbox(
+                label="Request data (JSON format)", lines=5, placeholder='{"age": 25, "location": "NY", "total": 600}')
+        submit_request = gr.Button(
+            "Submit a request to evaluate rules", variant="secondary")
+
         status = gr.Textbox(label="Status", interactive=False)
-        raw_rules_out = gr.Textbox(label="Current raw rule list", lines=10, interactive=False)
-        compiled_rules_out = gr.Textbox(label="Compiled / ordered rules", lines=10, interactive=False)
+        raw_rules_out = gr.Textbox(
+            label="Current raw rule list", lines=10, interactive=False)
+        compiled_rules_out = gr.Textbox(
+            label="Compiled / ordered rules", lines=10, interactive=False)
+
+        request_results = gr.Textbox(
+            label="Request processing results", lines=10, interactive=False)
 
         add_manual_btn.click(
             app.add_manual_rules,
@@ -184,6 +212,13 @@ def create_ui():
             app.clear_all,
             inputs=[],
             outputs=[status, raw_rules_out, compiled_rules_out],
+        )
+
+        submit_request.click(
+            app.process_request,
+            inputs=[request_data],
+            outputs=[status, request_results],
+
         )
 
     return ui

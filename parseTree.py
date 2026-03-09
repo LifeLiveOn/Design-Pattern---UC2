@@ -1,6 +1,7 @@
 from interpreter import AtomicCondition, AndExpression, BusinessRule, BusinessRule, OrExpression, Condition, RuleSet
 from context import Context
 
+
 class ParseTreeGenerator:
     """
     Generates an interpreter expression tree from a rule condition string.
@@ -24,7 +25,8 @@ class ParseTreeGenerator:
         """
 
         # split OR groups first
-        or_groups = [group.strip() for group in self.expression_txt.split("||")]
+        or_groups = [group.strip()
+                     for group in self.expression_txt.split("||")]
 
         and_expressions = []
 
@@ -81,8 +83,10 @@ class ParseTreeGenerator:
 
                 return AtomicCondition(left, op, right)
 
-        raise ValueError(f"Invalid condition: {text}")
-    
+        # No operator found — treat as a boolean flag (e.g. "international orders")
+        return AtomicCondition(text.strip(), "==", True)
+
+
 # example usage
 if __name__ == "__main__":
     """
@@ -102,4 +106,4 @@ if __name__ == "__main__":
     ruleset = RuleSet("Discount Rules")
     ruleset.add_rule(rule)
     applied_rules = ruleset.evaluate(context)
-    print("Applied Rules given Context:",context.data, applied_rules)
+    print("Applied Rules given Context:", context.data, applied_rules)
