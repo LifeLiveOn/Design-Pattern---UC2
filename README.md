@@ -26,12 +26,12 @@ Open `http://127.0.0.1:7860` in your browser.
 Paste rules in the **Manual rules** textbox (one per line):
 
 ```
-[P=100] age > 65 -> ApplyDiscount(15)
-[P=90] age > 18 && location == "NY" -> ApplyDiscount(10)
-[P=80] total >= 500 -> ApplyDiscount(5)
-[P=70] weight <= 5 && distance <= 100 -> CalculateFedExShipping(4.5, 80)
-[P=60] weight > 10 && distance > 200 -> CalculateUPSShipping(12, 250)
-[P=40] order_value > 500 -> SetPriorityShipping()
+age > 65 -> ApplyDiscount(15)
+age > 18 && location == "NY" -> ApplyDiscount(10)
+total >= 500 -> ApplyDiscount(5)
+weight <= 5 && distance <= 100 -> CalculateFedExShipping(4.5, 80)
+weight > 10 && distance > 200 -> CalculateUPSShipping(12, 250)
+order_value > 500 -> SetPriorityShipping()
 ```
 
 Click **Append Manual Rules**.
@@ -91,3 +91,34 @@ uv run test_integration.py
 | `parseTree.py`   | —                       | Converts condition strings to expression trees |
 | `context.py`     | —                       | Wraps request data dict                        |
 | `config.py`      | —                       | All settings (AI model, prompts, UI)           |
+
+## Parse Tree Visualization
+
+Each compiled `BusinessRule` now keeps a `parse_tree` object (`rule.parse_tree`).
+
+### 1) ASCII tree (terminal)
+
+```python
+from handler import pipeline
+
+rules = pipeline.handle('age > 18 && location == "NY" -> ApplyDiscount(10)')
+print(rules[0].parse_tree.to_ascii())
+```
+
+Example output:
+
+```text
+ParseTree<...>: age > 18 && location == "NY"
+└── AND [a1b2c3d4]
+	├── ATOMIC: age > 18 [e5f6a7b8]
+	└── ATOMIC: location == NY [c9d0e1f2]
+```
+
+### 2) Mermaid diagram
+
+```python
+mermaid_text = rules[0].parse_tree.to_mermaid()
+print(mermaid_text)
+```
+
+Use the printed Mermaid text in any Mermaid renderer.

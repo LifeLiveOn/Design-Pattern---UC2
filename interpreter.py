@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
+import re
 from context import Context
 from action import Action
+from config import BusinessRulesConfig
 
 
 class Expression(ABC):
@@ -152,25 +154,72 @@ class RuleSet:
         self.rules.append(rule)
         # self.rules.sort(key=lambda r: r.priority, reverse=True)  # Sort by priority (higher first)
 
+    def _sorted_rules(self):
+        return sorted(self.rules, key=lambda r: r.priority, reverse=True)
+
+    def _matched_rules(self, context: Context):
+        return [rule for rule in self._sorted_rules() if rule.evaluate(context)]
+
+    def _rule_action_text(self, rule: BusinessRule) -> str:
+        return ", ".join(str(action) for action in rule.actions)
+
+    def _extract_discount_value(self, action_text: str):
+        match = re.fullmatch(
+            r"ApplyDiscount\(\s*([0-9]+(?:\.[0-9]+)?)\s*\)", action_text)
+        if not match:
+            return None
+        return float(match.group(1))
+
+    def _select_rules_by_policy(self, matched_rules: list[BusinessRule]):
+        policy = getattr(BusinessRulesConfig, "MATCH_POLICY", "all")
+
+        if policy == "highest_priority_only":
+            return matched_rules[:1]
+
+        if policy == "max_discount_then_priority":
+            discount_candidates = []
+            selected_non_discount = []
+
+            for rule in matched_rules:
+                action_text = self._rule_action_text(rule)
+                discount_value = self._extract_discount_value(action_text)
+
+                if discount_value is None:
+                    selected_non_discount.append(rule)
+                else:
+                    discount_candidates.append((discount_value, rule))
+
+            selected = []
+
+            if discount_candidates:
+                max_discount = max(value for value, _ in discount_candidates)
+                best_discount_rules = [
+                    rule for value, rule in discount_candidates if value == max_discount]
+                best_discount_rules = sorted(
+                    best_discount_rules, key=lambda r: r.priority, reverse=True)
+                selected.append(best_discount_rules[0])
+
+            selected.extend(selected_non_discount)
+            return selected
+
+        return matched_rules
+
     def evaluate(self, context: Context):
         applied_rules = []
+        matched_rules = self._matched_rules(context)
+        selected_rules = self._select_rules_by_policy(matched_rules)
 
-        sorted_rules = sorted(
-            self.rules, key=lambda r: r.priority, reverse=True)
-
-        for rule in sorted_rules:
-            if rule.evaluate(context):
-                action_text = ", ".join(str(action) for action in rule.actions)
-                applied_rules.append(rule.rule_id + ": " + action_text)
+        for rule in selected_rules:
+            action_text = self._rule_action_text(rule)
+            applied_rules.append(rule.rule_id + ": " + action_text)
         return applied_rules if applied_rules else "No actions applied"
 
     def execute(self, context: Context):
-        sorted_rules = sorted(
-            self.rules, key=lambda r: r.priority, reverse=True)
         results = []
-        for rule in sorted_rules:
-            if rule.evaluate(context):
-                results.extend(rule.execute(context))
+        matched_rules = self._matched_rules(context)
+        selected_rules = self._select_rules_by_policy(matched_rules)
+        for rule in selected_rules:
+            results.extend(rule.execute(context))
         return results
 
 

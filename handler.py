@@ -106,7 +106,9 @@ class ParseTreeGenerationHandler(Handler):
 
             parser = ParseTreeGenerator(condition_text)
 
-            expression = parser.generate_parse_tree()
+            parse_tree = parser.generate_parse_tree()
+
+            expression = parse_tree.get_root_expression()
 
             condition = Condition(expression)
 
@@ -115,9 +117,12 @@ class ParseTreeGenerationHandler(Handler):
             priority = explicit_priority if explicit_priority is not None else (
                 total_rules - index + 1)
 
-            parsed_rules.append(
-                BusinessRule(f"rule_{index}", priority, condition, [command])
-            )
+            business_rule = BusinessRule(
+                f"rule_{index}", priority, condition, [command])
+
+            business_rule.parse_tree = parse_tree
+
+            parsed_rules.append(business_rule)
 
         return parsed_rules
 

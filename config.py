@@ -134,6 +134,13 @@ class BusinessRulesConfig:
     # Rule priority settings
     PRIORITY_BASED_ON_COMPLEXITY = True  # More complex conditions = higher priority
 
+    # Rule match policy during evaluation:
+    # - "all": apply all matched rules (existing behavior)
+    # - "highest_priority_only": apply only the first matched rule after priority sort
+    # - "max_discount_then_priority": choose max ApplyDiscount(x) among matches,
+    #   tie-break by priority; keep non-discount matches
+    MATCH_POLICY = "max_discount_then_priority"
+
 
 # =============================================================================
 # UI CONFIGURATION
